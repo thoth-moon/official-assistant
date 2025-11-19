@@ -1,0 +1,8 @@
+{
+  "name": "coze-chat-app",
+  "version": "1.0.0",
+  "dependencies": {
+    "jsonwebtoken": "^8.5.1",
+    "uuid": "^9.0.0"
+  }
+}

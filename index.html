@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>公众号助手</title>
+    <style>
+        #position_demo {
+            position: absolute;
+            right: 10px;
+            bottom: 20px;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        .center-title {
+            font-size: 2.5rem;
+            font-weight: 600;
+            color: white;
+            text-align: center;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            padding: 2rem 3rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            line-height: 1.4;
+            max-width: 80%;
+        }
+    </style>
+</head>
+<body>
+<h1 class="center-title">请点击右下角的悬浮球，开始创作吧！</h1>
+<div id="position_demo"></div>
+
+<script src="https://lf-cdn.coze.cn/obj/unpkg/flow-platform/chat-app-sdk/1.2.0-beta.19/libs/cn/index.js"></script>
+<script>
+// 生成或获取持久化的用户ID
+function getOrCreateUserID() {
+    let userId = localStorage.getItem('coze_user_id');
+    if (!userId) {
+        userId = 'user_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+        localStorage.setItem('coze_user_id', userId);
+    }
+    return userId;
+}
+
+// 从后端获取JWT令牌
+async function initializeCozeChat() {
+    try {
+        const userId = getOrCreateUserID();
+        console.log('当前用户ID:', userId);
+        
+        const response = await fetch(`/api/generate-token?user_id=${encodeURIComponent(userId)}`);
+        const data = await response.json();
+        
+        if (data.token) {
+            const cozeWebSDK = new CozeWebSDK.WebChatClient({
+                config: {
+                    bot_id: '7571692790871605300',
+                },
+                componentProps: {
+                    title: '公众号助手',
+                },
+                auth: {
+                    type: 'token',
+                    token: data.token,
+                    onRefreshToken: async function () {
+                        const refreshResponse = await fetch(`/api/generate-token?user_id=${encodeURIComponent(userId)}`);
+                        const refreshData = await refreshResponse.json();
+                        return refreshData.token;
+                    }
+                },
+                conversations: {
+                    isNeed: false,
+                },
+            });
+            
+            cozeWebSDK.mount('#position_demo');
+        } else {
+            console.error('Failed to get JWT token:', data.error);
+        }
+    } catch (error) {
+        console.error('Error initializing Coze chat:', error);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', initializeCozeChat);
+</script>
+</body>
+</html>
